@@ -6,16 +6,19 @@ type Piece interface {
 	Name() string
 	ShortName() string
 	Owner() Player
+	TakenBy(player Player)
 	IsPromotable() bool
 	IsPromoted() bool
-	MoveablePositions(curPos *Position, board Board) []*Position
-	IsMoveableTo(curPos, nextPos *Position, board Board) bool
+	YDirectionNum() int
+	MovablePositions(curPos *Position) PositionList
+	IsMovableTo(curPos, distPos *Position) bool
 }
 
 type pieceImpl struct {
 	Player       Player
 	isPromotable bool
 	isPromoted   bool
+	isInHand     bool
 }
 
 func (p *pieceImpl) Owner() Player {
@@ -25,17 +28,59 @@ func (p *pieceImpl) Owner() Player {
 func (p *pieceImpl) IsPromotable() bool {
 	return p.isPromotable
 }
+
 func (p *pieceImpl) IsPromoted() bool {
 	return p.isPromoted
 }
 
+func (p *pieceImpl) TakenBy(player Player) {
+	p.Player = player
+	p.isPromoted = false
+	p.isInHand = true
+}
+
+// first player attacks from bottom to top which means -1 (descending)
+// second player attacks from top to bottom which means 1 (ascending)
+func (p *pieceImpl) YDirectionNum() int {
+	if p.Player.IsFirstPlayer() {
+		return -1
+	} else {
+		return 1
+	}
+}
+
 type Position struct {
-	X uint
-	Y uint
+	X int
+	Y int
+}
+
+type PositionList []*Position
+
+func (pl PositionList) Contains(pos *Position) bool {
+	for _, p := range pl {
+		if p.X == pos.X && p.Y == pos.Y {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Position) String() string {
 	return fmt.Sprintf("x: %d, y: %d", p.X, p.Y)
+}
+
+func (p *Position) IsValid() bool {
+	return p.X >= 0 && p.X < 9 && p.Y >= 0 && p.Y < 9
+}
+
+func filterValidPositions(positions []*Position) []*Position {
+	var validRelativePositions []*Position
+	for _, pos := range positions {
+		if pos.IsValid() {
+			validRelativePositions = append(validRelativePositions, pos)
+		}
+	}
+	return validRelativePositions
 }
 
 // 王
@@ -59,12 +104,13 @@ func (k *King) ShortName() string {
 	}
 }
 
-func (k *King) MoveablePositions(curPos *Position, board Board) []*Position {
-	return KingMoveablePositions(curPos, board, k.Player.IsFirstPlayer())
+func (k *King) MovablePositions(curPos *Position) PositionList {
+	return filterValidPositions(KingMovableRelativePositions())
 }
 
-func (k *King) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	return IsKingMoveableTo(curPos, nextPos, board, k.Player.IsFirstPlayer())
+func (k *King) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := k.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 飛車
@@ -84,20 +130,19 @@ func (r *Rook) ShortName() string {
 	return "飛"
 }
 
-func (r *Rook) MoveablePositions(curPos *Position, board Board) []*Position {
+func (r *Rook) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
 	if r.isPromoted {
-		return PromotedRookMoveablePositions(curPos, board, r.Player.IsFirstPlayer())
+		movableRelativePositions = PromotedRookMovableRelativePositions()
 	} else {
-		return RookMoveablePositions(curPos, board, r.Player.IsFirstPlayer())
+		movableRelativePositions = RookMovableRelativePositions()
 	}
+	return calcMovablePositions(r, curPos, movableRelativePositions)
 }
 
-func (r *Rook) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if r.isPromoted {
-		return IsPromotedRookMoveableTo(curPos, nextPos, board, r.Player.IsFirstPlayer())
-	} else {
-		return IsRookMoveableTo(curPos, nextPos, board, r.Player.IsFirstPlayer())
-	}
+func (r *Rook) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := r.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 角
@@ -117,20 +162,19 @@ func (b *Bishop) ShortName() string {
 	return "角"
 }
 
-func (b *Bishop) MoveablePositions(curPos *Position, board Board) []*Position {
+func (b *Bishop) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
 	if b.isPromoted {
-		return PromotedBishopMoveablePositions(curPos, board, b.Player.IsFirstPlayer())
+		movableRelativePositions = PromotedBishopMovableRelativePositions()
 	} else {
-		return BishopMoveablePositions(curPos, board, b.Player.IsFirstPlayer())
+		movableRelativePositions = BishopMovableRelativePositions()
 	}
+	return calcMovablePositions(b, curPos, movableRelativePositions)
 }
 
-func (b *Bishop) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if b.isPromoted {
-		return IsPromotedBishopMoveableTo(curPos, nextPos, board, b.Player.IsFirstPlayer())
-	} else {
-		return IsBishopMoveableTo(curPos, nextPos, board, b.Player.IsFirstPlayer())
-	}
+func (b *Bishop) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := b.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 金
@@ -150,12 +194,13 @@ func (g *Gold) ShortName() string {
 	return "金"
 }
 
-func (g *Gold) MoveablePositions(curPos *Position, board Board) []*Position {
-	return GoldMoveablePositions(curPos, board, g.Player.IsFirstPlayer())
+func (g *Gold) MovablePositions(curPos *Position) PositionList {
+	return calcMovablePositions(g, curPos, GoldMovableRelativePositions())
 }
 
-func (g *Gold) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	return IsGoldMoveableTo(curPos, nextPos, board, g.Player.IsFirstPlayer())
+func (g *Gold) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := g.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 銀
@@ -175,18 +220,19 @@ func (s *Silver) ShortName() string {
 	return "銀"
 }
 
-func (s *Silver) MoveablePositions(curPos *Position, board Board) []*Position {
+func (s *Silver) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
 	if s.isPromoted {
-		return GoldMoveablePositions(curPos, board, s.Player.IsFirstPlayer())
+		movableRelativePositions = GoldMovableRelativePositions()
+	} else {
+		movableRelativePositions = SilverMovableRelativePositions()
 	}
-	return nil
+	return calcMovablePositions(s, curPos, movableRelativePositions)
 }
 
-func (s *Silver) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if s.isPromoted {
-		return IsGoldMoveableTo(curPos, nextPos, board, s.Player.IsFirstPlayer())
-	}
-	return false
+func (s *Silver) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := s.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 桂馬
@@ -206,18 +252,19 @@ func (k *Knight) ShortName() string {
 	return "桂"
 }
 
-func (k *Knight) MoveablePositions(curPos *Position, board Board) []*Position {
+func (k *Knight) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
 	if k.isPromoted {
-		return GoldMoveablePositions(curPos, board, k.Player.IsFirstPlayer())
+		movableRelativePositions = GoldMovableRelativePositions()
+	} else {
+		movableRelativePositions = KnightMovableRelativePositions()
 	}
-	return nil
+	return calcMovablePositions(k, curPos, movableRelativePositions)
 }
 
-func (k *Knight) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if k.isPromoted {
-		return IsGoldMoveableTo(curPos, nextPos, board, k.Player.IsFirstPlayer())
-	}
-	return false
+func (k *Knight) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := k.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 香車
@@ -229,26 +276,27 @@ func NewLance(p Player) *Lance {
 	return &Lance{pieceImpl: &pieceImpl{Player: p, isPromotable: true, isPromoted: false}}
 }
 
-func (l *Lance) MoveablePositions(curPos *Position, board Board) []*Position {
-	if l.isPromoted {
-		return GoldMoveablePositions(curPos, board, l.Player.IsFirstPlayer())
-	}
-	return nil
-}
-
-func (l *Lance) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if l.isPromoted {
-		return IsGoldMoveableTo(curPos, nextPos, board, l.Player.IsFirstPlayer())
-	}
-	return false
-}
-
 func (l *Lance) Name() string {
 	return "香車"
 }
 
 func (l *Lance) ShortName() string {
 	return "香"
+}
+
+func (l *Lance) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
+	if l.isPromoted {
+		movableRelativePositions = GoldMovableRelativePositions()
+	} else {
+		movableRelativePositions = LanceMovableRelativePositions()
+	}
+	return calcMovablePositions(l, curPos, movableRelativePositions)
+}
+
+func (l *Lance) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := l.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
 }
 
 // 歩
@@ -268,16 +316,26 @@ func (p *Pawn) ShortName() string {
 	return "歩"
 }
 
-func (p *Pawn) MoveablePositions(curPos *Position, board Board) []*Position {
+func (p *Pawn) MovablePositions(curPos *Position) PositionList {
+	var movableRelativePositions []*Position
 	if p.isPromoted {
-		return GoldMoveablePositions(curPos, board, p.Player.IsFirstPlayer())
+		movableRelativePositions = GoldMovableRelativePositions()
+	} else {
+		movableRelativePositions = PawnMovableRelativePositions()
 	}
-	return nil
+	return calcMovablePositions(p, curPos, movableRelativePositions)
 }
 
-func (p *Pawn) IsMoveableTo(curPos, nextPos *Position, board Board) bool {
-	if p.isPromoted {
-		return IsGoldMoveableTo(curPos, nextPos, board, p.Player.IsFirstPlayer())
+func (p *Pawn) IsMovableTo(curPos, distPos *Position) bool {
+	movablePositions := p.MovablePositions(curPos)
+	return movablePositions.Contains(distPos)
+}
+
+func calcMovablePositions(p Piece, curPos *Position, movableRelativePositions []*Position) []*Position {
+	var movablePositions []*Position
+	for _, relativePos := range movableRelativePositions {
+		pos := &Position{X: curPos.X + relativePos.X, Y: curPos.Y + relativePos.Y*p.YDirectionNum()}
+		movablePositions = append(movablePositions, pos)
 	}
-	return false
+	return filterValidPositions(movablePositions)
 }

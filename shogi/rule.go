@@ -1,75 +1,82 @@
 package shogi
 
-
-func KingMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
+// Calculated RelativePositions are theoretically movable positions, and not sure if actually movable
+// since it depends on the current position and surrounding pieces.
+func KingMovableRelativePositions() []*Position {
+	return []*Position{
+		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
+		{X: -1, Y: 0}, {X: 1, Y: 0},
+		{X: -1, Y: -1}, {X: 0, Y: - 1}, {X: 1, Y: -1},
+	}
 }
 
-func IsKingMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
+func RookMovableRelativePositions() []*Position {
+	var moveableRelativePositions []*Position
+	for i := 1; i < 9; i++ {
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: i})  // up to top edge
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: 0})  // up to right edge
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: -i}) // up to bottom edge
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: 0}) // up to left edge
+	}
+	return moveableRelativePositions
 }
 
-func RookMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
+func PromotedRookMovableRelativePositions() []*Position {
+	aditionalMovableRelativePositions := []*Position{
+		{X: -1, Y: 1}, {X: 1, Y: 1},
+		{X: -1, Y: -1}, {X: 1, Y: -1},
+	}
+	return append(RookMovableRelativePositions(), aditionalMovableRelativePositions...)
 }
 
-func IsRookMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
+func BishopMovableRelativePositions() []*Position {
+	var moveableRelativePositions []*Position
+	for i := 1; i < 9; i++ {
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: i})  // up to top-left corner
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: i})   // up to top-right corner
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: -i})  // up to bottom-right corner
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: -i}) // up to bottom-left corner
+	}
+	return moveableRelativePositions
 }
 
-func PromotedRookMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
+func PromotedBishopMovableRelativePositions() []*Position {
+	additionalMovableRelativePositions := []*Position{
+		{X: -1, Y: 1}, {X: 1, Y: 1},
+		{X: -1, Y: -1}, {X: 1, Y: -1},
+	}
+	return append(BishopMovableRelativePositions(), additionalMovableRelativePositions...)
 }
 
-func IsPromotedRookMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
+func GoldMovableRelativePositions() []*Position {
+	return []*Position{
+		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
+		{X: -1, Y: 0}, {X: 1, Y: 0},
+		{X: 0, Y: - 1},
+	}
 }
 
-func BishopMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
+func SilverMovableRelativePositions() []*Position {
+	return []*Position{
+		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
+		{X: -1, Y: -1}, {X: 1, Y: -1},
+	}
 }
 
-func IsBishopMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
+func KnightMovableRelativePositions() []*Position {
+	return []*Position{
+		{X: -1, Y: 2}, {X: 1, Y: 2},
+	}
 }
 
-func PromotedBishopMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
+func LanceMovableRelativePositions() []*Position {
+	var moveableRelativePositions []*Position
+	for i := 1; i < 9; i++ {
+		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: i}) // up to top edge
+	}
+	return moveableRelativePositions
 }
 
-func IsPromotedBishopMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
+func PawnMovableRelativePositions() []*Position {
+	return []*Position{{X: 0, Y: 1}}
 }
-
-func GoldMoveablePositions(curPosition *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
-}
-
-func IsGoldMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
-}
-
-func SilverMoveablePositions(curPos *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
-}
-
-func IsSilverMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
-}
-
-func KnightMoveablePositions(curPos *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
-}
-
-func IsKnightMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
-}
-
-func LanceMoveablePositions(curPos *Position, board Board, isFirstPlayer bool) []*Position {
-	return nil
-}
-
-func IsLanceMoveableTo(curPos, nextPos *Position, board Board, isFirstPlayer bool) bool {
-	return false
-}
-

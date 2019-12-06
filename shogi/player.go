@@ -3,10 +3,12 @@ package shogi
 type Player interface {
 	IsFirstPlayer() bool
 	Name() string
+	TakePiece(piece Piece)
+	PiecesInHand() []Piece
 }
 
 type PlayerImpl struct {
-	takenPieces   []Piece
+	piecesInHand  []Piece
 	isFirstPlayer bool
 }
 
@@ -28,4 +30,13 @@ func (p *PlayerImpl) Name() string {
 	} else {
 		return "先手"
 	}
+}
+
+func (p *PlayerImpl) TakePiece(piece Piece) {
+	p.piecesInHand = append(p.piecesInHand, piece)
+	piece.TakenBy(p)
+}
+
+func (p *PlayerImpl) PiecesInHand() []Piece {
+	return p.piecesInHand
 }
