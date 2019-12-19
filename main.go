@@ -16,4 +16,5 @@ func main() {
 	_ = game.MovePiece(&shogi.Position{X: 1, Y: 4}, &shogi.Position{X: 1, Y: 5})
 	// _ := game.MovePiece(&shogi.Position{X: 0, Y: 6}, &shogi.Position{X: 0, Y: 5})
 	game.Print()
+	game.ShowCurrentPlayerPiecesInHands()
 }

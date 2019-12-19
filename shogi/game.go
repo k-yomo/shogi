@@ -3,6 +3,7 @@ package shogi
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type Game struct {
@@ -31,6 +32,21 @@ func (g *Game) Print() {
 
 func (g *Game) CurrentPlayerName() string {
 	return g.currentPlayer.Name()
+}
+
+func (g *Game) ShowCurrentPlayerPiecesInHands() {
+	piecesInHand := g.currentPlayer.PiecesInHand()
+	pieceNamesInHand := make([]string, len(piecesInHand))
+	for _, piece := range piecesInHand {
+		pieceNamesInHand = append(pieceNamesInHand, piece.ShortName())
+	}
+	var pieceNamesInHandStr string
+	if len(pieceNamesInHand) > 0 {
+		pieceNamesInHandStr	= strings.Join(pieceNamesInHand, "、")
+	} else {
+		pieceNamesInHandStr	= "無し"
+	}
+	fmt.Println(fmt.Sprintf("%s: %s",g.currentPlayer.Name(), pieceNamesInHandStr))
 }
 
 func (g *Game) MovePiece(curPos, nextPos *Position) error {
