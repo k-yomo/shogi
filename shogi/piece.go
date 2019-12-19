@@ -49,9 +49,15 @@ func (p *pieceImpl) YDirectionNum() int {
 	}
 }
 
+type Axis int
+
+func (a Axis) Idx() int {
+	return int(a - 1)
+}
+
 type Position struct {
-	X int
-	Y int
+	X Axis
+	Y Axis
 }
 
 type PositionList []*Position
@@ -70,7 +76,7 @@ func (p *Position) String() string {
 }
 
 func (p *Position) IsValid() bool {
-	return p.X >= 0 && p.X < 9 && p.Y >= 0 && p.Y < 9
+	return p.X >= 1 && p.X <= 9 && p.Y >= 1 && p.Y <= 9
 }
 
 func filterValidPositions(positions []*Position) []*Position {
@@ -334,7 +340,7 @@ func (p *Pawn) IsMovableTo(curPos, distPos *Position) bool {
 func calcMovablePositions(p Piece, curPos *Position, movableRelativePositions []*Position) []*Position {
 	var movablePositions []*Position
 	for _, relativePos := range movableRelativePositions {
-		pos := &Position{X: curPos.X + relativePos.X, Y: curPos.Y + relativePos.Y*p.YDirectionNum()}
+		pos := &Position{X: curPos.X + relativePos.X, Y: curPos.Y + relativePos.Y*Axis(p.YDirectionNum())}
 		movablePositions = append(movablePositions, pos)
 	}
 	return filterValidPositions(movablePositions)

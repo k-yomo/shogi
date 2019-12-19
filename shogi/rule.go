@@ -11,33 +11,33 @@ func KingMovableRelativePositions() []*Position {
 }
 
 func RookMovableRelativePositions() []*Position {
-	var moveableRelativePositions []*Position
-	for i := 1; i < 9; i++ {
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: i})  // up to top edge
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: 0})  // up to right edge
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: -i}) // up to bottom edge
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: 0}) // up to left edge
+	var movableRelativePositions []*Position
+	for i := Axis(1); i < 9; i++ {
+		movableRelativePositions = append(movableRelativePositions, &Position{X: 0, Y: i})  // up to top edge
+		movableRelativePositions = append(movableRelativePositions, &Position{X: i, Y: 0})  // up to right edge
+		movableRelativePositions = append(movableRelativePositions, &Position{X: 0, Y: -i}) // up to bottom edge
+		movableRelativePositions = append(movableRelativePositions, &Position{X: -i, Y: 0}) // up to left edge
 	}
-	return moveableRelativePositions
+	return movableRelativePositions
 }
 
 func PromotedRookMovableRelativePositions() []*Position {
-	aditionalMovableRelativePositions := []*Position{
+	additionalMovableRelativePositions := []*Position{
 		{X: -1, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: -1}, {X: 1, Y: -1},
 	}
-	return append(RookMovableRelativePositions(), aditionalMovableRelativePositions...)
+	return append(RookMovableRelativePositions(), additionalMovableRelativePositions...)
 }
 
 func BishopMovableRelativePositions() []*Position {
-	var moveableRelativePositions []*Position
-	for i := 1; i < 9; i++ {
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: i})  // up to top-left corner
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: i})   // up to top-right corner
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: i, Y: -i})  // up to bottom-right corner
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: -i, Y: -i}) // up to bottom-left corner
+	var movableRelativePositions []*Position
+	for i := Axis(1); i < 9; i++ {
+		movableRelativePositions = append(movableRelativePositions, &Position{X: -i, Y: i})  // up to top-left corner
+		movableRelativePositions = append(movableRelativePositions, &Position{X: i, Y: i})   // up to top-right corner
+		movableRelativePositions = append(movableRelativePositions, &Position{X: i, Y: -i})  // up to bottom-right corner
+		movableRelativePositions = append(movableRelativePositions, &Position{X: -i, Y: -i}) // up to bottom-left corner
 	}
-	return moveableRelativePositions
+	return movableRelativePositions
 }
 
 func PromotedBishopMovableRelativePositions() []*Position {
@@ -70,11 +70,11 @@ func KnightMovableRelativePositions() []*Position {
 }
 
 func LanceMovableRelativePositions() []*Position {
-	var moveableRelativePositions []*Position
-	for i := 1; i < 9; i++ {
-		moveableRelativePositions = append(moveableRelativePositions, &Position{X: 0, Y: i}) // up to top edge
+	var movableRelativePositions []*Position
+	for i := Axis(1); i < 9; i++ {
+		movableRelativePositions = append(movableRelativePositions, &Position{X: 0, Y: i}) // up to top edge
 	}
-	return moveableRelativePositions
+	return movableRelativePositions
 }
 
 func PawnMovableRelativePositions() []*Position {

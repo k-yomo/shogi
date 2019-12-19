@@ -17,7 +17,7 @@ func NewBoard(firstPlayer Player, secondPlayer Player) (board Board) {
 func initializeBase(p Player) [][]Piece {
 	rows := [][]Piece{
 		{NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p), NewPawn(p)},
-		{nil,NewBishop(p) , nil, nil, nil, nil, nil, NewRook(p), nil},
+		{nil, NewRook(p), nil, nil, nil, nil, nil, NewBishop(p), nil},
 		{NewLance(p), NewKnight(p), NewSilver(p), NewGold(p), NewKing(p), NewGold(p), NewSilver(p), NewKnight(p), NewLance(p)},
 	}
 	if !p.IsFirstPlayer() {
@@ -39,7 +39,8 @@ func initializeMiddleZone() [][]Piece {
 func (b Board) String() string {
 	var boardString string
 	for _, row := range b {
-		for _, piece := range row {
+		for i := 8; i >= 0; i-- {
+			piece := row[i]
 			if piece != nil {
 				boardString += piece.ShortName()
 			} else {
@@ -52,11 +53,24 @@ func (b Board) String() string {
 }
 
 func (b Board) FindPiece(pos *Position) (p Piece, exist bool) {
-	p = b[pos.Y][pos.X]
+	p = b[pos.Y.Idx()][pos.X.Idx()]
 	return p, p != nil
 }
 
 func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) (isSucceeded bool) {
+	if !b.IsMovablePieceTo(currentPlayer, curPos, distPos) {
+		return false
+	}
+	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
+	if distPositionPieceExist {
+		currentPlayer.TakePiece(distPositionPiece)
+	}
+	b[distPos.Y.Idx()][distPos.X.Idx()] = b[curPos.Y.Idx()][curPos.X.Idx()]
+	b[curPos.Y.Idx()][curPos.X.Idx()] = nil
+	return true
+}
+
+func (b Board) IsMovablePieceTo(currentPlayer Player, curPos, distPos *Position) bool {
 	piece, exist := b.FindPiece(curPos)
 	if !exist {
 		fmt.Println(fmt.Sprintf("piece doesn't exist at %v", curPos))
@@ -66,22 +80,16 @@ func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) (isSuc
 		fmt.Println(fmt.Sprintf("piece doesn't belong to %s", piece.Owner().Name()))
 		return false
 	}
-	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
-	if distPositionPieceExist && IsSamePlayer(currentPlayer, distPositionPiece.Owner()) {
-		fmt.Println(fmt.Sprintf("there is current user's piece at %v", distPos))
-		return false
-	}
 	if !piece.IsMovableTo(curPos, distPos) {
 		fmt.Println(fmt.Sprintf("the piece can't be moved to %v", distPos))
 		return false
 	}
 
-	if distPositionPieceExist {
-		currentPlayer.TakePiece(distPositionPiece)
+	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
+	if distPositionPieceExist && IsSamePlayer(currentPlayer, distPositionPiece.Owner()) {
+		fmt.Println(fmt.Sprintf("there is current user's piece at %v", distPos))
+		return false
 	}
-	b[distPos.Y][distPos.X] = b[curPos.Y][curPos.X]
-	b[curPos.Y][curPos.X] = nil
-	fmt.Println(currentPlayer.PiecesInHand())
 	return true
 }
 
