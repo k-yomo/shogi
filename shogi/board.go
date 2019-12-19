@@ -1,7 +1,7 @@
 package shogi
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 )
 
 type Board [][]Piece
@@ -57,9 +57,9 @@ func (b Board) FindPiece(pos *Position) (p Piece, exist bool) {
 	return p, p != nil
 }
 
-func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) (isSucceeded bool) {
-	if !b.IsMovablePieceTo(currentPlayer, curPos, distPos) {
-		return false
+func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) error {
+	if err := b.IsMovablePieceTo(currentPlayer, curPos, distPos); err != nil {
+		return err
 	}
 	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
 	if distPositionPieceExist {
@@ -67,30 +67,26 @@ func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) (isSuc
 	}
 	b[distPos.Y.Idx()][distPos.X.Idx()] = b[curPos.Y.Idx()][curPos.X.Idx()]
 	b[curPos.Y.Idx()][curPos.X.Idx()] = nil
-	return true
+	return nil
 }
 
-func (b Board) IsMovablePieceTo(currentPlayer Player, curPos, distPos *Position) bool {
+func (b Board) IsMovablePieceTo(currentPlayer Player, curPos, distPos *Position) error {
 	piece, exist := b.FindPiece(curPos)
 	if !exist {
-		fmt.Println(fmt.Sprintf("piece doesn't exist at %v", curPos))
-		return false
+		return errors.Errorf("piece doesn't exist at %v", curPos)
 	}
 	if !IsSamePlayer(currentPlayer, piece.Owner()) {
-		fmt.Println(fmt.Sprintf("piece doesn't belong to %s", piece.Owner().Name()))
-		return false
+		return errors.Errorf("piece doesn't belong to %s", piece.Owner().Name())
 	}
 	if !piece.IsMovableTo(curPos, distPos) {
-		fmt.Println(fmt.Sprintf("the piece can't be moved to %v", distPos))
-		return false
+		return errors.Errorf("the piece can't be moved to %v", distPos)
 	}
 
 	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
 	if distPositionPieceExist && IsSamePlayer(currentPlayer, distPositionPiece.Owner()) {
-		fmt.Println(fmt.Sprintf("there is current user's piece at %v", distPos))
-		return false
+		return errors.Errorf("there is current user's piece at %v", distPos)
 	}
-	return true
+	return nil
 }
 
 func reversePieceOrder(s []Piece) {

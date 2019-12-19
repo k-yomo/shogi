@@ -1,8 +1,8 @@
 package shogi
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -26,35 +26,36 @@ func NewGame() *Game {
 	}
 }
 
-func (g *Game) Print() {
-	fmt.Println(g.board.String())
+func (g *Game) FormatCurrentSituation() string {
+	return fmt.Sprintf(`
+-------------------------------
+| 先手: %s
+-------------------------------
+%s
+-------------------------------
+| 後手: %s
+-------------------------------
+`, g.FormatFirstPlayerPiecesInHand(), g.board.String(), g.FormatSecondPlayerPiecesInHand())
 }
 
 func (g *Game) CurrentPlayerName() string {
 	return g.currentPlayer.Name()
 }
 
-func (g *Game) ShowCurrentPlayerPiecesInHands() {
-	piecesInHand := g.currentPlayer.PiecesInHand()
-	pieceNamesInHand := make([]string, len(piecesInHand))
-	for _, piece := range piecesInHand {
-		pieceNamesInHand = append(pieceNamesInHand, piece.ShortName())
-	}
-	var pieceNamesInHandStr string
-	if len(pieceNamesInHand) > 0 {
-		pieceNamesInHandStr	= strings.Join(pieceNamesInHand, "、")
-	} else {
-		pieceNamesInHandStr	= "無し"
-	}
-	fmt.Println(fmt.Sprintf("%s: %s",g.currentPlayer.Name(), pieceNamesInHandStr))
-}
-
 func (g *Game) MovePiece(curPos, nextPos *Position) error {
-	if !g.board.MovePiece(g.currentPlayer, curPos, nextPos) {
-		return errors.New(fmt.Sprintf("piece can't be moved or not exist"))
+	if err := g.board.MovePiece(g.currentPlayer, curPos, nextPos); err != nil {
+		return errors.Wrap(err, "move piece")
 	}
 	g.switchPlayer()
 	return nil
+}
+
+func (g *Game) FormatFirstPlayerPiecesInHand() string {
+	return g.formatPlayerPiecesInHands(g.firstPlayer)
+}
+
+func (g *Game) FormatSecondPlayerPiecesInHand() string {
+	return g.formatPlayerPiecesInHands(g.secondPlayer)
 }
 
 func (g *Game) switchPlayer() {
@@ -65,3 +66,17 @@ func (g *Game) switchPlayer() {
 	}
 }
 
+func (g *Game) formatPlayerPiecesInHands(p Player) string {
+	piecesInHand := p.PiecesInHand()
+	pieceNamesInHand := make([]string, len(piecesInHand))
+	for i, piece := range piecesInHand {
+		pieceNamesInHand[i] = piece.ShortName()
+	}
+	var pieceNamesInHandStr string
+	if len(pieceNamesInHand) > 0 {
+		pieceNamesInHandStr = strings.Join(pieceNamesInHand, "、")
+	} else {
+		pieceNamesInHandStr = "無し"
+	}
+	return fmt.Sprintf("%s", pieceNamesInHandStr)
+}

@@ -26,9 +26,9 @@ func (p *PlayerImpl) IsFirstPlayer() bool {
 
 func (p *PlayerImpl) Name() string {
 	if p.isFirstPlayer {
-		return "後手"
-	} else {
 		return "先手"
+	} else {
+		return "後手"
 	}
 }
 
