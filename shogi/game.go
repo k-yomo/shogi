@@ -50,6 +50,20 @@ func (g *Game) MovePiece(curPos, nextPos *Position) error {
 	return nil
 }
 
+func (g *Game) DropPiece(piece Piece, distPos *Position) error {
+	if err := g.board.DropPiece(piece, distPos); err != nil {
+		return err
+	}
+	if err := g.currentPlayer.RemoveDroppedPiece(piece); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *Game) CurrentPlayerPiecesInHand() []Piece {
+	return g.currentPlayer.PiecesInHand()
+}
+
 func (g *Game) FormatFirstPlayerPiecesInHand() string {
 	return g.formatPlayerPiecesInHands(g.firstPlayer)
 }
