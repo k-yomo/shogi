@@ -58,19 +58,6 @@ func (b Board) FindPiece(pos *Position) (p Piece, exist bool) {
 }
 
 func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) error {
-	if err := b.IsMovablePieceTo(currentPlayer, curPos, distPos); err != nil {
-		return err
-	}
-	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
-	if distPositionPieceExist {
-		currentPlayer.TakePiece(distPositionPiece)
-	}
-	b[distPos.Y.Idx()][distPos.X.Idx()] = b[curPos.Y.Idx()][curPos.X.Idx()]
-	b[curPos.Y.Idx()][curPos.X.Idx()] = nil
-	return nil
-}
-
-func (b Board) IsMovablePieceTo(currentPlayer Player, curPos, distPos *Position) error {
 	piece, exist := b.FindPiece(curPos)
 	if !exist {
 		return errors.Errorf("piece doesn't exist at %v", curPos)
@@ -82,10 +69,25 @@ func (b Board) IsMovablePieceTo(currentPlayer Player, curPos, distPos *Position)
 		return errors.Errorf("the piece can't be moved to %v", distPos)
 	}
 
-	distPositionPiece, distPositionPieceExist := b.FindPiece(distPos)
-	if distPositionPieceExist && IsSamePlayer(currentPlayer, distPositionPiece.Owner()) {
+	pieceAtDistPos, pieceExistsAtDistPos := b.FindPiece(distPos)
+	if pieceExistsAtDistPos && IsSamePlayer(currentPlayer, pieceAtDistPos.Owner()) {
 		return errors.Errorf("there is current user's piece at %v", distPos)
 	}
+
+	if pieceExistsAtDistPos {
+		currentPlayer.TakePiece(pieceAtDistPos)
+	}
+	b[distPos.Y.Idx()][distPos.X.Idx()] = b[curPos.Y.Idx()][curPos.X.Idx()]
+	b[curPos.Y.Idx()][curPos.X.Idx()] = nil
+	return nil
+}
+
+func (b Board) DropPiece(piece Piece, distPos *Position) error {
+	_, pieceExistsAtDistPos := b.FindPiece(distPos)
+	if pieceExistsAtDistPos {
+		return errors.Errorf("there is a piece at %v", distPos)
+	}
+	b[distPos.X][distPos.Y] = piece
 	return nil
 }
 

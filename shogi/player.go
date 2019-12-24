@@ -1,9 +1,12 @@
 package shogi
 
+import "github.com/pkg/errors"
+
 type Player interface {
 	IsFirstPlayer() bool
 	Name() string
 	TakePiece(piece Piece)
+	RemoveDroppedPiece(piece Piece) error
 	PiecesInHand() []Piece
 }
 
@@ -35,6 +38,20 @@ func (p *PlayerImpl) Name() string {
 func (p *PlayerImpl) TakePiece(piece Piece) {
 	p.piecesInHand = append(p.piecesInHand, piece)
 	piece.TakenBy(p)
+}
+
+func (p *PlayerImpl) RemoveDroppedPiece(droppedPiece Piece) error {
+	var newPiecesInHand []Piece
+	for _, piece := range p.piecesInHand {
+		if  piece != droppedPiece {
+			newPiecesInHand = append(newPiecesInHand, piece)
+		}
+	}
+	if len(p.piecesInHand) == len(newPiecesInHand) {
+		return errors.Errorf("piece %s is not found", droppedPiece.Name())
+	}
+	p.piecesInHand = newPiecesInHand
+	return nil
 }
 
 func (p *PlayerImpl) PiecesInHand() []Piece {
