@@ -27,6 +27,12 @@ func initializeBase(p Player) [][]Piece {
 	return rows
 }
 
+func reversePieceOrder(s []Piece) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
 // initializeBase initializes middle empty 3 rows
 func initializeMiddleZone() [][]Piece {
 	rows := make([][]Piece, 3)
@@ -65,8 +71,15 @@ func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) error 
 	if !IsSamePlayer(currentPlayer, piece.Owner()) {
 		return errors.Errorf("piece doesn't belong to %s", piece.Owner().Name())
 	}
-	if !piece.IsMovableTo(curPos, distPos) {
+
+	positionsOnTheWay, isMovable := piece.PositionsOnTheWayTo(curPos, distPos)
+	if !isMovable {
 		return errors.Errorf("the piece can't be moved to %v", distPos)
+	}
+	for _, p := range positionsOnTheWay {
+		if _, exist := b.FindPiece(p); exist {
+			return errors.Errorf("there is the other pieces on the way to %v", distPos)
+		}
 	}
 
 	pieceAtDistPos, pieceExistsAtDistPos := b.FindPiece(distPos)
@@ -91,8 +104,3 @@ func (b Board) DropPiece(piece Piece, distPos *Position) error {
 	return nil
 }
 
-func reversePieceOrder(s []Piece) {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
-}

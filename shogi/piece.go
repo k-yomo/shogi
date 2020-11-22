@@ -12,6 +12,9 @@ type Piece interface {
 	YDirectionNum() int
 	MovablePositions(curPos *Position) PositionList
 	IsMovableTo(curPos, distPos *Position) bool
+	// PositionsOnTheWayTo returns positions where the piece passes on the way to the destination position.
+	// Return array doesn't include curPos and distPos
+	PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool)
 }
 
 type pieceImpl struct {
@@ -119,6 +122,10 @@ func (k *King) IsMovableTo(curPos, distPos *Position) bool {
 	return movablePositions.Contains(distPos)
 }
 
+func (k *King) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	return nil, k.IsMovableTo(curPos, distPos)
+}
+
 // 飛車
 type Rook struct {
 	*pieceImpl
@@ -149,6 +156,32 @@ func (r *Rook) MovablePositions(curPos *Position) PositionList {
 func (r *Rook) IsMovableTo(curPos, distPos *Position) bool {
 	movablePositions := r.MovablePositions(curPos)
 	return movablePositions.Contains(distPos)
+}
+
+func (r *Rook) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	if !r.IsMovableTo(curPos, distPos) {
+		return nil, false
+	}
+
+	switch {
+	case curPos.X < distPos.X:
+		for x := curPos.X + 1; x < distPos.X; x++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: x, Y: curPos.X})
+		}
+	case curPos.X > distPos.X:
+		for x := curPos.X - 1; x < distPos.X; x-- {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: x, Y: curPos.X})
+		}
+	case curPos.Y < distPos.Y:
+		for y := curPos.Y + 1; y < distPos.Y; y++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X, Y: y})
+		}
+	case curPos.Y > distPos.Y:
+		for y := curPos.Y - 1; y > distPos.Y; y-- {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X, Y: y})
+		}
+	}
+	return positionsOnTheWay, true
 }
 
 // 角
@@ -183,6 +216,35 @@ func (b *Bishop) IsMovableTo(curPos, distPos *Position) bool {
 	return movablePositions.Contains(distPos)
 }
 
+func (b *Bishop) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	if !b.IsMovableTo(curPos, distPos) {
+		return nil, false
+	}
+	switch {
+	// to top right
+	case curPos.X < distPos.X && curPos.Y < distPos.Y:
+		for i := 1; Axis(i) < distPos.X - curPos.X; i++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X + Axis(i), Y: curPos.Y + Axis(i)})
+		}
+	// to bottom right
+	case curPos.X < distPos.X && curPos.Y > distPos.Y:
+		for i := 1; Axis(i) < distPos.X - curPos.X; i++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X + Axis(i), Y: curPos.Y + Axis(-i)})
+		}
+	// to top left
+	case curPos.X > distPos.X && curPos.Y < distPos.Y:
+		for i := 1; Axis(i) < curPos.X - distPos.X; i++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X + Axis(-i), Y: curPos.Y + Axis(i)})
+		}
+	// to bottom left
+	case curPos.X > distPos.X && curPos.Y > distPos.Y:
+		for i := 1; Axis(i) < curPos.X - distPos.X; i++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X + Axis(-i), Y: curPos.Y + Axis(-i)})
+		}
+	}
+	return positionsOnTheWay, true
+}
+
 // 金
 type Gold struct {
 	*pieceImpl
@@ -207,6 +269,10 @@ func (g *Gold) MovablePositions(curPos *Position) PositionList {
 func (g *Gold) IsMovableTo(curPos, distPos *Position) bool {
 	movablePositions := g.MovablePositions(curPos)
 	return movablePositions.Contains(distPos)
+}
+
+func (g *Gold) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	return nil, g.IsMovableTo(curPos, distPos)
 }
 
 // 銀
@@ -241,6 +307,10 @@ func (s *Silver) IsMovableTo(curPos, distPos *Position) bool {
 	return movablePositions.Contains(distPos)
 }
 
+func (s *Silver) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	return nil, s.IsMovableTo(curPos, distPos)
+}
+
 // 桂馬
 type Knight struct {
 	*pieceImpl
@@ -271,6 +341,10 @@ func (k *Knight) MovablePositions(curPos *Position) PositionList {
 func (k *Knight) IsMovableTo(curPos, distPos *Position) bool {
 	movablePositions := k.MovablePositions(curPos)
 	return movablePositions.Contains(distPos)
+}
+
+func (k *Knight) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	return nil, k.IsMovableTo(curPos, distPos)
 }
 
 // 香車
@@ -305,6 +379,23 @@ func (l *Lance) IsMovableTo(curPos, distPos *Position) bool {
 	return movablePositions.Contains(distPos)
 }
 
+func (l *Lance) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	if !l.IsMovableTo(curPos, distPos) {
+		return nil, l.IsMovableTo(curPos, distPos)
+	}
+
+	if curPos.Y < distPos.Y {
+		for y := curPos.Y + 1; y < distPos.Y; y++ {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X, Y: y})
+		}
+	} else {
+		for y := curPos.Y - 1; y > distPos.Y; y-- {
+			positionsOnTheWay = append(positionsOnTheWay, &Position{X: curPos.X, Y: y})
+		}
+	}
+	return positionsOnTheWay, true
+}
+
 // 歩
 type Pawn struct {
 	*pieceImpl
@@ -335,6 +426,10 @@ func (p *Pawn) MovablePositions(curPos *Position) PositionList {
 func (p *Pawn) IsMovableTo(curPos, distPos *Position) bool {
 	movablePositions := p.MovablePositions(curPos)
 	return movablePositions.Contains(distPos)
+}
+
+func (p *Pawn) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay PositionList, movableToThePosition bool) {
+	return nil, p.IsMovableTo(curPos, distPos)
 }
 
 func calcMovablePositions(p Piece, curPos *Position, movableRelativePositions []*Position) []*Position {
