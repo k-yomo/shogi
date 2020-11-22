@@ -100,7 +100,15 @@ func (b Board) DropPiece(piece Piece, distPos *Position) error {
 	if pieceExistsAtDistPos {
 		return errors.Errorf("there is a piece at %v", distPos)
 	}
+	if _, isPawn := piece.(*Pawn); isPawn {
+		for _, y := range []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9} {
+			p, exist := b.FindPiece(&Position{X: distPos.X, Y: y})
+			twoPawnsOnSameColumn := exist && IsSamePlayer(p.Owner(), piece.Owner()) && !p.IsPromoted()
+			if twoPawnsOnSameColumn {
+				return errors.Errorf("there is a pawn on the same column: %v", distPos.Y)
+			}
+		}
+	}
 	b[distPos.X][distPos.Y] = piece
 	return nil
 }
-
