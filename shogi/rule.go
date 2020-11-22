@@ -2,7 +2,7 @@ package shogi
 
 // Calculated RelativePositions are theoretically movable positions, and not sure if actually movable
 // since it depends on the current position and surrounding pieces.
-func KingMovableRelativePositions() []*Position {
+func KingMovableRelativePositions() PositionList {
 	return []*Position{
 		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: 0}, {X: 1, Y: 0},
@@ -10,8 +10,8 @@ func KingMovableRelativePositions() []*Position {
 	}
 }
 
-func RookMovableRelativePositions() []*Position {
-	var movableRelativePositions []*Position
+func RookMovableRelativePositions() PositionList {
+	var movableRelativePositions PositionList
 	for i := Axis(1); i < 9; i++ {
 		movableRelativePositions = append(movableRelativePositions, &Position{X: 0, Y: i})  // up to top edge
 		movableRelativePositions = append(movableRelativePositions, &Position{X: i, Y: 0})  // up to right edge
@@ -21,16 +21,16 @@ func RookMovableRelativePositions() []*Position {
 	return movableRelativePositions
 }
 
-func PromotedRookMovableRelativePositions() []*Position {
-	additionalMovableRelativePositions := []*Position{
+func PromotedRookMovableRelativePositions() PositionList {
+	additionalMovableRelativePositions := PositionList{
 		{X: -1, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: -1}, {X: 1, Y: -1},
 	}
 	return append(RookMovableRelativePositions(), additionalMovableRelativePositions...)
 }
 
-func BishopMovableRelativePositions() []*Position {
-	var movableRelativePositions []*Position
+func BishopMovableRelativePositions() PositionList {
+	var movableRelativePositions PositionList
 	for i := Axis(1); i < 9; i++ {
 		movableRelativePositions = append(movableRelativePositions, &Position{X: -i, Y: i})  // up to top-left corner
 		movableRelativePositions = append(movableRelativePositions, &Position{X: i, Y: i})   // up to top-right corner
@@ -40,43 +40,43 @@ func BishopMovableRelativePositions() []*Position {
 	return movableRelativePositions
 }
 
-func PromotedBishopMovableRelativePositions() []*Position {
-	additionalMovableRelativePositions := []*Position{
+func PromotedBishopMovableRelativePositions() PositionList {
+	additionalMovableRelativePositions := PositionList{
 		{X: -1, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: -1}, {X: 1, Y: -1},
 	}
 	return append(BishopMovableRelativePositions(), additionalMovableRelativePositions...)
 }
 
-func GoldMovableRelativePositions() []*Position {
-	return []*Position{
+func GoldMovableRelativePositions() PositionList {
+	return PositionList{
 		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: 0}, {X: 1, Y: 0},
 		{X: 0, Y: - 1},
 	}
 }
 
-func SilverMovableRelativePositions() []*Position {
-	return []*Position{
+func SilverMovableRelativePositions() PositionList {
+	return PositionList{
 		{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
 		{X: -1, Y: -1}, {X: 1, Y: -1},
 	}
 }
 
-func KnightMovableRelativePositions() []*Position {
-	return []*Position{
+func KnightMovableRelativePositions() PositionList {
+	return PositionList{
 		{X: -1, Y: 2}, {X: 1, Y: 2},
 	}
 }
 
-func LanceMovableRelativePositions() []*Position {
-	var movableRelativePositions []*Position
+func LanceMovableRelativePositions() PositionList {
+	var movableRelativePositions PositionList
 	for i := Axis(1); i < 9; i++ {
 		movableRelativePositions = append(movableRelativePositions, &Position{X: 0, Y: i}) // up to top edge
 	}
 	return movableRelativePositions
 }
 
-func PawnMovableRelativePositions() []*Position {
-	return []*Position{{X: 0, Y: 1}}
+func PawnMovableRelativePositions() PositionList {
+	return PositionList{{X: 0, Y: 1}}
 }

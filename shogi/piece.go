@@ -1,7 +1,5 @@
 package shogi
 
-import "fmt"
-
 type Piece interface {
 	Name() string
 	ShortName() string
@@ -52,46 +50,6 @@ func (p *pieceImpl) YDirectionNum() int {
 	}
 }
 
-type Axis int
-
-func (a Axis) Idx() int {
-	return int(a - 1)
-}
-
-type Position struct {
-	X Axis
-	Y Axis
-}
-
-type PositionList []*Position
-
-func (pl PositionList) Contains(pos *Position) bool {
-	for _, p := range pl {
-		if p.X == pos.X && p.Y == pos.Y {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *Position) String() string {
-	return fmt.Sprintf("x: %d, y: %d", p.X, p.Y)
-}
-
-func (p *Position) IsValid() bool {
-	return p.X >= 1 && p.X <= 9 && p.Y >= 1 && p.Y <= 9
-}
-
-func filterValidPositions(positions []*Position) []*Position {
-	var validRelativePositions []*Position
-	for _, pos := range positions {
-		if pos.IsValid() {
-			validRelativePositions = append(validRelativePositions, pos)
-		}
-	}
-	return validRelativePositions
-}
-
 // 王
 type King struct {
 	*pieceImpl
@@ -114,7 +72,7 @@ func (k *King) ShortName() string {
 }
 
 func (k *King) MovablePositions(curPos *Position) PositionList {
-	return filterValidPositions(KingMovableRelativePositions())
+	return calcMovableAbsPositions(k, curPos, KingMovableRelativePositions())
 }
 
 func (k *King) IsMovableTo(curPos, distPos *Position) bool {
@@ -144,13 +102,13 @@ func (r *Rook) ShortName() string {
 }
 
 func (r *Rook) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if r.isPromoted {
 		movableRelativePositions = PromotedRookMovableRelativePositions()
 	} else {
 		movableRelativePositions = RookMovableRelativePositions()
 	}
-	return calcMovablePositions(r, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(r, curPos, movableRelativePositions)
 }
 
 func (r *Rook) IsMovableTo(curPos, distPos *Position) bool {
@@ -202,13 +160,13 @@ func (b *Bishop) ShortName() string {
 }
 
 func (b *Bishop) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if b.isPromoted {
 		movableRelativePositions = PromotedBishopMovableRelativePositions()
 	} else {
 		movableRelativePositions = BishopMovableRelativePositions()
 	}
-	return calcMovablePositions(b, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(b, curPos, movableRelativePositions)
 }
 
 func (b *Bishop) IsMovableTo(curPos, distPos *Position) bool {
@@ -263,7 +221,7 @@ func (g *Gold) ShortName() string {
 }
 
 func (g *Gold) MovablePositions(curPos *Position) PositionList {
-	return calcMovablePositions(g, curPos, GoldMovableRelativePositions())
+	return calcMovableAbsPositions(g, curPos, GoldMovableRelativePositions())
 }
 
 func (g *Gold) IsMovableTo(curPos, distPos *Position) bool {
@@ -293,13 +251,13 @@ func (s *Silver) ShortName() string {
 }
 
 func (s *Silver) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if s.isPromoted {
 		movableRelativePositions = GoldMovableRelativePositions()
 	} else {
 		movableRelativePositions = SilverMovableRelativePositions()
 	}
-	return calcMovablePositions(s, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(s, curPos, movableRelativePositions)
 }
 
 func (s *Silver) IsMovableTo(curPos, distPos *Position) bool {
@@ -329,13 +287,13 @@ func (k *Knight) ShortName() string {
 }
 
 func (k *Knight) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if k.isPromoted {
 		movableRelativePositions = GoldMovableRelativePositions()
 	} else {
 		movableRelativePositions = KnightMovableRelativePositions()
 	}
-	return calcMovablePositions(k, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(k, curPos, movableRelativePositions)
 }
 
 func (k *Knight) IsMovableTo(curPos, distPos *Position) bool {
@@ -365,13 +323,13 @@ func (l *Lance) ShortName() string {
 }
 
 func (l *Lance) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if l.isPromoted {
 		movableRelativePositions = GoldMovableRelativePositions()
 	} else {
 		movableRelativePositions = LanceMovableRelativePositions()
 	}
-	return calcMovablePositions(l, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(l, curPos, movableRelativePositions)
 }
 
 func (l *Lance) IsMovableTo(curPos, distPos *Position) bool {
@@ -414,13 +372,13 @@ func (p *Pawn) ShortName() string {
 }
 
 func (p *Pawn) MovablePositions(curPos *Position) PositionList {
-	var movableRelativePositions []*Position
+	var movableRelativePositions PositionList
 	if p.isPromoted {
 		movableRelativePositions = GoldMovableRelativePositions()
 	} else {
 		movableRelativePositions = PawnMovableRelativePositions()
 	}
-	return calcMovablePositions(p, curPos, movableRelativePositions)
+	return calcMovableAbsPositions(p, curPos, movableRelativePositions)
 }
 
 func (p *Pawn) IsMovableTo(curPos, distPos *Position) bool {
@@ -432,11 +390,12 @@ func (p *Pawn) PositionsOnTheWayTo(curPos, distPos *Position) (positionsOnTheWay
 	return nil, p.IsMovableTo(curPos, distPos)
 }
 
-func calcMovablePositions(p Piece, curPos *Position, movableRelativePositions []*Position) []*Position {
-	var movablePositions []*Position
-	for _, relativePos := range movableRelativePositions {
+// calcMovableAbsPositions calculates absolute positions where the piece can be moved to
+func calcMovableAbsPositions(p Piece, curPos *Position, movableRelativePositions PositionList) PositionList {
+		movablePositions := PositionList{}
+		for _, relativePos := range movableRelativePositions {
 		pos := &Position{X: curPos.X + relativePos.X, Y: curPos.Y + relativePos.Y*Axis(p.YDirectionNum())}
 		movablePositions = append(movablePositions, pos)
 	}
-	return filterValidPositions(movablePositions)
+		return movablePositions.SelectValid()
 }
