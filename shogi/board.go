@@ -100,15 +100,22 @@ func (b Board) DropPiece(piece Piece, distPos *Position) error {
 	if pieceExistsAtDistPos {
 		return errors.Errorf("there is a piece at %v", distPos)
 	}
-	if _, isPawn := piece.(*Pawn); isPawn {
-		for _, y := range []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9} {
-			p, exist := b.FindPiece(&Position{X: distPos.X, Y: y})
-			twoPawnsOnSameColumn := exist && IsSamePlayer(p.Owner(), piece.Owner()) && !p.IsPromoted()
-			if twoPawnsOnSameColumn {
-				return errors.Errorf("there is a pawn on the same column: %v", distPos.Y)
-			}
+	if pawn, isPawn := piece.(*Pawn); isPawn {
+		if b.isTwoPawnsOnSameColumn(pawn, distPos.X) {
+			return errors.Errorf("there is a pawn on the same column: %v", distPos.X)
 		}
 	}
 	b[distPos.X][distPos.Y] = piece
 	return nil
+}
+
+func (b Board) isTwoPawnsOnSameColumn(pawn *Pawn, distPosX Axis) bool {
+	for _, y := range []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9} {
+		p, exist := b.FindPiece(&Position{X: distPosX, Y: y})
+		twoPawnsOnSameColumn := exist && IsSamePlayer(p.Owner(), pawn.Owner()) && !p.IsPromoted()
+		if twoPawnsOnSameColumn {
+			return false
+		}
+	}
+	return true
 }
