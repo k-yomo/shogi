@@ -63,36 +63,69 @@ func (b Board) FindPiece(pos *Position) (p Piece, exist bool) {
 	return p, p != nil
 }
 
-func (b Board) MovePiece(currentPlayer Player, curPos, distPos *Position) error {
-	piece, exist := b.FindPiece(curPos)
+func (b Board) FindPlayerPiece(curPlayer Player, pos *Position) (p Piece, exist bool) {
+	p, exist = b.FindPiece(pos)
 	if !exist {
-		return errors.Errorf("piece doesn't exist at %v", curPos)
+		return nil, false
 	}
-	if !IsSamePlayer(currentPlayer, piece.Owner()) {
-		return errors.Errorf("piece doesn't belong to %s", piece.Owner().Name())
+	return p, IsSamePlayer(curPlayer, p.Owner())
+}
+
+func (b Board) MovePiece(curPlayer Player, curPos, distPos *Position) error {
+	piece, exist := b.FindPlayerPiece(curPlayer, curPos)
+	if !exist {
+		return errors.Errorf("current player's piece doesn't exist at %v", curPos)
 	}
 
-	positionsOnTheWay, isMovable := piece.PositionsOnTheWayTo(curPos, distPos)
-	if !isMovable {
+	if !b.IsPieceMovableTo(curPos, distPos) {
 		return errors.Errorf("the piece can't be moved to %v", distPos)
-	}
-	for _, p := range positionsOnTheWay {
-		if _, exist := b.FindPiece(p); exist {
-			return errors.Errorf("there is the other pieces on the way to %v", distPos)
-		}
 	}
 
 	pieceAtDistPos, pieceExistsAtDistPos := b.FindPiece(distPos)
-	if pieceExistsAtDistPos && IsSamePlayer(currentPlayer, pieceAtDistPos.Owner()) {
+	if pieceExistsAtDistPos && IsSamePlayer(curPlayer, pieceAtDistPos.Owner()) {
 		return errors.Errorf("there is current user's piece at %v", distPos)
 	}
 
+	_, isMovingKing := piece.(*King)
+	if b.validateChecking(curPlayer, distPos, isMovingKing) {
+		return errors.New("king is checked, so you must avoid it")
+	}
+
 	if pieceExistsAtDistPos {
-		currentPlayer.TakePiece(pieceAtDistPos)
+		curPlayer.TakePiece(pieceAtDistPos)
 	}
 	b[distPos.Y.Idx()][distPos.X.Idx()] = b[curPos.Y.Idx()][curPos.X.Idx()]
 	b[curPos.Y.Idx()][curPos.X.Idx()] = nil
 	return nil
+}
+
+func (b Board) IsPieceMovableTo(curPos, distPos *Position) bool {
+	piece, exist := b.FindPiece(curPos)
+	if !exist {
+		return false
+	}
+	positionsOnTheWay, isMovable := piece.PositionsOnTheWayTo(curPos, distPos)
+	if !isMovable {
+		return false
+	}
+	for _, pos := range positionsOnTheWay {
+		if _, exist := b.FindPiece(pos); exist {
+			return false
+		}
+	}
+	return true
+}
+
+func (b Board) PieceMovablePosition(piecePos *Position) PositionList {
+	piece, _ := b.FindPiece(piecePos)
+	movablePositions := piece.MovablePositions(piecePos)
+	var actualMovablePositions PositionList
+	for _, distPos := range movablePositions {
+		if b.IsPieceMovableTo(piecePos, distPos) {
+			actualMovablePositions = append(actualMovablePositions, distPos)
+		}
+	}
+	return actualMovablePositions
 }
 
 func (b Board) DropPiece(piece Piece, distPos *Position) error {
@@ -105,8 +138,81 @@ func (b Board) DropPiece(piece Piece, distPos *Position) error {
 			return errors.Errorf("there is a pawn on the same column: %v", distPos.X)
 		}
 	}
-	b[distPos.X][distPos.Y] = piece
+	if b.validateChecking(piece.Owner(), distPos, false) {
+		return errors.New("king is checked, so you must avoid it")
+	}
+	b[distPos.X.Idx()][distPos.Y.Idx()] = piece
 	return nil
+}
+
+func (b Board) validateChecking(curPlayer Player, distPos *Position, isMovingKing bool) bool {
+	checkingPiecePos := b.checkingPiecePosition(curPlayer)
+	if checkingPiecePos == nil {
+		return true
+	}
+	if isMovingKing {
+		if !b.PieceMovablePosition(checkingPiecePos).Contains(distPos) {
+			return true
+		}
+	} else {
+		p, _ := b.FindPiece(checkingPiecePos)
+		positionsOnTheWayToKing, _ := p.PositionsOnTheWayTo(checkingPiecePos, b.findPlayerKingPosition(curPlayer))
+		if positionsOnTheWayToKing.Contains(distPos) {
+			return true
+		}
+	}
+	return false
+}
+
+// CheckingPiecePositionOnTheWayToKing returns the checking piece's positions on the of the way to given player's king
+// if king is not checked, it returns nil
+func (b Board) checkingPiecePosition(player Player) *Position {
+	kingPos := b.findPlayerKingPosition(player)
+	for _, pos := range b.findOpponentPiecePositions(player) {
+		if b.IsPieceMovableTo(pos, kingPos) {
+			return pos
+		}
+	}
+	return nil
+}
+
+func (b Board) findOpponentPiecePositions(curPlayer Player) PositionList {
+	var opponentPiecePositions PositionList
+	b.IterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
+		if exist && !IsSamePlayer(curPlayer, piece.Owner()) {
+			opponentPiecePositions = append(opponentPiecePositions, pos)
+		}
+		return false
+	})
+	return opponentPiecePositions
+}
+
+func (b Board) findPlayerKingPosition(curPlayer Player) *Position {
+	var kingPos *Position
+	b.IterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
+		if king, ok := piece.(*King); ok && IsSamePlayer(curPlayer, king.Player) {
+			kingPos = pos
+			return true
+		}
+		return false
+	})
+	if kingPos != nil {
+		return kingPos
+	}
+	panic("king is not found, something is wrong")
+}
+
+func (b Board) IterateThrough(inner func(pos *Position, piece Piece, exist bool) (finished bool)) {
+	row := []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	for _, y := range row {
+		for _, x := range row {
+			pos := &Position{X: x, Y: y}
+			p, exist := b.FindPiece(pos)
+			if finished := inner(pos, p, exist); finished {
+				return
+			}
+		}
+	}
 }
 
 func (b Board) isTwoPawnsOnSameColumn(pawn *Pawn, distPosX Axis) bool {

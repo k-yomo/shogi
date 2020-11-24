@@ -8,6 +8,8 @@ type Piece interface {
 	IsPromotable() bool
 	IsPromoted() bool
 	YDirectionNum() int
+	// MovablePositions returns positions where the piece can move to if there is no obstacles on the way.
+	// It means, depending on the other piece positions, actual movable positions can be more limited.
 	MovablePositions(curPos *Position) PositionList
 	IsMovableTo(curPos, distPos *Position) bool
 	// PositionsOnTheWayTo returns positions where the piece passes on the way to the destination position.
