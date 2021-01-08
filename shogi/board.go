@@ -6,6 +6,9 @@ import (
 
 type Board [][]Piece
 
+var rows = []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9}
+var columns = []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9}
+
 func NewBoard(firstPlayer Player, secondPlayer Player) (board Board) {
 	board = append(board, initializeBase(secondPlayer)...)
 	board = append(board, initializeMiddleZone()...)
@@ -40,6 +43,14 @@ func initializeMiddleZone() [][]Piece {
 		rows[i] = []Piece{nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	}
 	return rows
+}
+
+func (b Board) opponentArea(player Player) [][]Piece {
+	if player.IsFirstPlayer() {
+		return b[0:4]
+	} else {
+		return b[6:9]
+	}
 }
 
 func (b Board) String() string {
@@ -178,7 +189,7 @@ func (b Board) checkingPiecePosition(player Player) *Position {
 
 func (b Board) findOpponentPiecePositions(curPlayer Player) PositionList {
 	var opponentPiecePositions PositionList
-	b.IterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
+	b.iterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
 		if exist && !IsSamePlayer(curPlayer, piece.Owner()) {
 			opponentPiecePositions = append(opponentPiecePositions, pos)
 		}
@@ -189,7 +200,7 @@ func (b Board) findOpponentPiecePositions(curPlayer Player) PositionList {
 
 func (b Board) findPlayerKingPosition(curPlayer Player) *Position {
 	var kingPos *Position
-	b.IterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
+	b.iterateThrough(func(pos *Position, piece Piece, exist bool) (finished bool) {
 		if king, ok := piece.(*King); ok && IsSamePlayer(curPlayer, king.Player) {
 			kingPos = pos
 			return true
@@ -202,10 +213,9 @@ func (b Board) findPlayerKingPosition(curPlayer Player) *Position {
 	panic("king is not found, something is wrong")
 }
 
-func (b Board) IterateThrough(inner func(pos *Position, piece Piece, exist bool) (finished bool)) {
-	row := []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	for _, y := range row {
-		for _, x := range row {
+func (b Board) iterateThrough(inner func(pos *Position, piece Piece, exist bool) (finished bool)) {
+	for _, y := range rows {
+		for _, x := range columns {
 			pos := &Position{X: x, Y: y}
 			p, exist := b.FindPiece(pos)
 			if finished := inner(pos, p, exist); finished {
@@ -216,7 +226,7 @@ func (b Board) IterateThrough(inner func(pos *Position, piece Piece, exist bool)
 }
 
 func (b Board) isTwoPawnsOnSameColumn(pawn *Pawn, distPosX Axis) bool {
-	for _, y := range []Axis{1, 2, 3, 4, 5, 6, 7, 8, 9} {
+	for _, y := range rows {
 		p, exist := b.FindPiece(&Position{X: distPosX, Y: y})
 		twoPawnsOnSameColumn := exist && IsSamePlayer(p.Owner(), pawn.Owner()) && !p.IsPromoted()
 		if twoPawnsOnSameColumn {
