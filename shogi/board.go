@@ -129,7 +129,7 @@ func (b Board) IsPieceMovableTo(curPos, distPos *Position) bool {
 
 func (b Board) PieceMovablePosition(piecePos *Position) PositionList {
 	piece, _ := b.FindPiece(piecePos)
-	movablePositions := piece.MovablePositions(piecePos)
+	movablePositions := SelectValidPositions(piece.MovablePositions(piecePos))
 	var actualMovablePositions PositionList
 	for _, distPos := range movablePositions {
 		if b.IsPieceMovableTo(piecePos, distPos) {
@@ -234,4 +234,14 @@ func (b Board) isTwoPawnsOnSameColumn(pawn *Pawn, distPosX Axis) bool {
 		}
 	}
 	return true
+}
+
+func SelectValidPositions(pl PositionList) PositionList {
+	var validRelativePositions PositionList
+	for _, p := range pl {
+		if p.X >= 1 && p.X <= 9 && p.Y >= 1 && p.Y <= 9 {
+			validRelativePositions = append(validRelativePositions, p)
+		}
+	}
+	return validRelativePositions
 }

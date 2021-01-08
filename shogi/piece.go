@@ -399,5 +399,5 @@ func calcMovableAbsPositions(p Piece, curPos *Position, movableRelativePositions
 		pos := &Position{X: curPos.X + relativePos.X, Y: curPos.Y + relativePos.Y*Axis(p.YDirectionNum())}
 		movablePositions = append(movablePositions, pos)
 	}
-		return movablePositions.SelectValid()
+		return movablePositions
 }
