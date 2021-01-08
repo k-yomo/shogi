@@ -210,8 +210,8 @@ type Gold struct {
 	*pieceImpl
 }
 
-func NewGold(p Player) *Bishop {
-	return &Bishop{pieceImpl: &pieceImpl{Player: p}}
+func NewGold(p Player) *Gold {
+	return &Gold{pieceImpl: &pieceImpl{Player: p}}
 }
 
 func (g *Gold) Name() string {
